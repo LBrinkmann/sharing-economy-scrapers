@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+import sc.drive_now.main
+import sc.multicity.main
+import sc.car2go.main
+
+def main():
+    sc.drive_now.main.main()
+    sc.multicity.main.main()
+    sc.car2go.main.main()
+
+
+if __name__ == '__main__':
+    main()
