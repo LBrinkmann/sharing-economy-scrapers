@@ -27,13 +27,17 @@ def main():
     for day in get_data_path_alldays('raw'):
         if not (exclude_today and day == datetime.date.today().isoformat()):
             try:
+                print("Parse Drive Now for day {}.".format(day))
                 sc.drive_now.main.parse(day)
+                print("Parse Multicity for day {}.".format(day))
                 sc.multicity.main.parse(day)
+                print("Parse Car2Go for day {}.".format(day))
                 sc.car2go.main.parse(day)
             except:
                 raise
             else:
                 try:
+                    print("Archive day {}.".format(day))
                     archive_name = os.path.expanduser(
                         os.path.join(archive_path, day))
                     raw_path = get_data_path('raw', day)
@@ -42,6 +46,7 @@ def main():
                     raise
                 else:
                     if rm_parsed:
+                        print("Remove raw data of day {}.".format(day))
                         shutil.rmtree(raw_path)
 
 
