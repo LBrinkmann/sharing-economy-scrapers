@@ -5,16 +5,16 @@ import os
 import requests
 
 
-def save_to_csv(df, subfolder, dayiso, rtype):
+def save_to_csv(df, subfolder, dayiso, rtype, batch_id):
     path = get_data_path(subfolder, dayiso)
-    filename = '{}_{}.csv'.format(rtype, dayiso)
+    filename = '{}_{}_{}.csv'.format(rtype, dayiso, batch_id)
     file_path = os.path.join(path, filename)
     df.to_csv(file_path)
 
 
-def load_csv(subfolder, dayiso, rtype):
+def load_csv(subfolder, dayiso, rtype, batch_id):
     path = get_data_path(subfolder, dayiso)
-    filename = '{}_{}.csv'.format(rtype, dayiso)
+    filename = '{}_{}.csv'.format(rtype, dayiso, batch_id)
     file_path = os.path.join(path, filename)
     pd.DataFrame.read_csv(file_path)
 
@@ -78,3 +78,20 @@ def get_json(dayiso, startswith=''):
             with open(pf, 'r') as o:
                 d = simplejson.load(o)
             yield d
+
+
+def get_batch(dayiso, startswith, batchsize):
+    l = []
+    for j in get_json(dayiso, startswith):
+        l.append(j)
+        if len(l) >= batchsize:
+            yield l
+            l = []
+    yield l
+
+
+def parse_batches(doc_to_cars, car_to_row, docname, dayiso, batchsize=500):
+    for i, batch in enumerate(get_batch(dayiso, docname, batchsize)):
+        rec = [car_to_row(d, m) for j in batch for d, m in doc_to_cars(j)]
+        df = pd.DataFrame.from_records(rec)
+        save_to_csv(df, 'raw_rec', dayiso, docname, str(i))

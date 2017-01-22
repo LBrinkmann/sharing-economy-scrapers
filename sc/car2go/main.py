@@ -1,7 +1,6 @@
-import pandas as pd
 import datetime
 from collections import OrderedDict
-from .. io import store_request, get_request, get_json, save_to_csv
+from .. io import store_request, get_request, parse_batches
 
 req = {
     'url': 'https://www.car2go.com/api/v2.1/vehicles?oauth_consumer_key=car2gowebsite&format=json&loc=berlin',
@@ -53,7 +52,4 @@ def car_to_row(d, meta):
 def parse(dayiso=None):
     if dayiso is None:
         dayiso = datetime.date.today().isoformat()
-    rec = [car_to_row(d, m) for j in get_json(dayiso, 'car2go')
-           for d, m in get_cars(j)]
-    df = pd.DataFrame.from_records(rec)
-    save_to_csv(df, 'raw_rec', dayiso, 'car2go')
+    parse_batches(get_cars, car_to_row, 'car2go', dayiso)

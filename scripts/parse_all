@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 
+'''
+Usage:
+    parse_all [-ir]
+
+Options:
+  -i    Include data from today.
+  -r    Remove parsed and achieved data.
+'''
+
 import datetime
+import docopt
 import os
 import shutil
 import sc.drive_now.main
@@ -9,7 +19,10 @@ import sc.car2go.main
 from sc.io import get_data_path_alldays, get_data_path
 
 
-def main(exclude_today=True, rm_parsed=False):
+def main():
+    exclude_today = False if args.get('-i', False) else True
+    rm_parsed = args.get('-r', False)
+
     archive_path = get_data_path('raw_archive')
     for day in get_data_path_alldays('raw'):
         if not (exclude_today and day == datetime.date.today().isoformat()):
@@ -18,7 +31,7 @@ def main(exclude_today=True, rm_parsed=False):
                 sc.multicity.main.parse(day)
                 sc.car2go.main.parse(day)
             except:
-                pass
+                raise
             else:
                 try:
                     archive_name = os.path.expanduser(
@@ -26,11 +39,12 @@ def main(exclude_today=True, rm_parsed=False):
                     raw_path = get_data_path('raw', day)
                     shutil.make_archive(archive_name, 'gztar', raw_path)
                 except:
-                    pass
+                    raise
                 else:
                     if rm_parsed:
                         shutil.rmtree(raw_path)
 
 
 if __name__ == '__main__':
+    args = docopt.docopt(__doc__)
     main()
