@@ -9,4 +9,6 @@ cd $parent_path
 
 . ./.venv/bin/activate
 
+. ./env.sh
+
 ./scripts/get_all

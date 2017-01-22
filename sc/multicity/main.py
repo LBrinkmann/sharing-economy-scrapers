@@ -1,9 +1,4 @@
-import requests
-import simplejson
-import datetime
-import os
-
-import pkg_resources
+from .. io import store_request, get_request
 
 req = {
     'url': 'https://www.multicity-carsharing.de/_denker-mc.php',
@@ -27,27 +22,6 @@ req = {
 }
 
 
-def get_request():
-    r = requests.get(**req)
-    rj = r.json()
-    return rj
-
-def store_request(requst_obj, rtype):
-    now = datetime.datetime.now().isoformat()
-    filename = '{}_{}.json'.format(rtype, now)
-    cwd = os.getcwd()
-    path = os.path.join(cwd, "data", filename)
-    data = {
-        'meta':
-        {
-            'type': rtype,
-            'timestamp': now
-        },
-        'data': requst_obj
-    }
-    with open(path, 'w') as o:
-        simplejson.dump(data, o)
-
 def main():
-    rj = get_request()
+    rj = get_request(req)
     store_request(rj, 'multicity')
