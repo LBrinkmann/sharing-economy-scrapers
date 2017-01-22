@@ -1,4 +1,7 @@
-from .. io import store_request, get_request
+import pandas as pd
+import datetime
+from collections import OrderedDict
+from .. io import store_request, get_request, get_json, save_to_csv
 
 req = {
     'url': 'https://www.car2go.com/api/v2.1/vehicles?oauth_consumer_key=car2gowebsite&format=json&loc=berlin',
@@ -15,6 +18,42 @@ req = {
 }
 
 
-def main():
+def scrap():
     rj = get_request(req)
     store_request(rj, 'car2go')
+
+
+def get_cars(d):
+    for c in d['data']['placemarks']:
+        yield c, d['meta']
+
+
+def car_to_row(d, meta):
+    split_address = d['address'].split(', ')
+    o = OrderedDict([
+        ('gid', "{}_{}".format(meta['type'], d['vin'])),
+        ('id', d['vin']),
+        ('licensePlate', d['name']),
+        ('timestamp', meta['timestamp']),
+        ('provider', meta['type']),
+        ('latitude', d['coordinates'][1]),
+        ('longitude', d['coordinates'][0]),
+        ('address0', split_address[0] if len(split_address) > 0 else None),
+        ('address1', split_address[1] if len(split_address) > 1 else None),
+        ('address2', split_address[2] if len(split_address) > 2 else None),
+        ('manufactor', 'daimler'),
+        ('fuelType', d['engineType']),
+        ('fuelLevel', d['fuel']),
+        ('innerCleanliness', d['interior']),
+        ('outerCleanliness', d['exterior'])
+    ])
+    return o
+
+
+def parse(dayiso=None):
+    if dayiso is None:
+        dayiso = datetime.date.today().isoformat()
+    rec = [car_to_row(d, m) for j in get_json(dayiso, 'car2go')
+           for d, m in get_cars(j)]
+    df = pd.DataFrame.from_records(rec)
+    save_to_csv(df, 'raw_rec', dayiso, 'car2go')

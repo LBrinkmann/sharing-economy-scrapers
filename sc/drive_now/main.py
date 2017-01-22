@@ -1,5 +1,7 @@
-from .. io import store_request, get_request
-
+import pandas as pd
+import datetime
+from collections import OrderedDict
+from .. io import store_request, get_request, get_json, save_to_csv
 
 req = {
     'url': 'https://api2.drive-now.com/cities/6099?expand=full',
@@ -21,6 +23,45 @@ req = {
 }
 
 
-def main():
+def scrap():
     rj = get_request(req)
     store_request(rj, 'drive_now')
+
+
+def get_cars(d):
+    for c in d['data']['cars']['items']:
+        yield c, d['meta']
+
+
+def car_to_row(d, meta):
+    o = OrderedDict([
+        ('gid', "{}_{}".format(meta['type'], d['id'])),
+        ('id', d['id']),
+        ('licensePlate', d['licensePlate']),
+        ('timestamp', meta['timestamp']),
+        ('provider', meta['type']),
+        ('latitude', d['latitude']),
+        ('longitude', d['longitude']),
+        ('address0', d['address'][0] if len(d['address']) > 0 else None),
+        ('address1', d['address'][1] if len(d['address']) > 1 else None),
+        ('address2', d['address'][2] if len(d['address']) > 2 else None),
+        ('manufactor', d['make']),
+        ('brand', d['series']),
+        ('model', d['modelName']),
+        ('transmission', d['transmission']),
+        ('fuelType', d['fuelType']),
+        ('fuelLevel', d['fuelLevel']),
+        ('estimatedRange', d['estimatedRange']),
+        ('isCharging', d['isCharging']),
+        ('innerCleanliness', d['innerCleanliness']),
+    ])
+    return o
+
+
+def parse(dayiso=None):
+    if dayiso is None:
+        dayiso = datetime.date.today().isoformat()
+    rec = [car_to_row(d, m) for j in get_json(dayiso, 'drive_now')
+           for d, m in get_cars(j)]
+    df = pd.DataFrame.from_records(rec)
+    save_to_csv(df, 'raw_rec', dayiso, 'drive_now')

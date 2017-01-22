@@ -4,10 +4,11 @@ import sc.drive_now.main
 import sc.multicity.main
 import sc.car2go.main
 
+
 def main():
-    sc.drive_now.main.main()
-    sc.multicity.main.main()
-    sc.car2go.main.main()
+    sc.drive_now.main.scrap()
+    sc.multicity.main.scrap()
+    sc.car2go.main.scrap()
 
 
 if __name__ == '__main__':

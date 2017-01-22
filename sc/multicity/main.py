@@ -1,4 +1,7 @@
-from .. io import store_request, get_request
+import pandas as pd
+import datetime
+from collections import OrderedDict
+from .. io import store_request, get_request, get_json, save_to_csv
 
 req = {
     'url': 'https://www.multicity-carsharing.de/_denker-mc.php',
@@ -22,6 +25,39 @@ req = {
 }
 
 
-def main():
+def scrap():
     rj = get_request(req)
     store_request(rj, 'multicity')
+
+
+def get_cars(d):
+    for c in d['data']:
+        yield c, d['meta']
+
+
+def car_to_row(d, meta):
+    split_model = d['value']['vehicle']['name'].split(' ')
+    o = OrderedDict([
+        ('gid', "{}_{}".format(meta['type'], d['value']['vehicle']['uid'])),
+        ('id', d['value']['vehicle']['uid']),
+        ('licensePlate', d['value']['vehicle']['license']),
+        ('timestamp', meta['timestamp']),
+        ('provider', meta['type']),
+        ('latitude', d['location']['latitude']),
+        ('longitude', d['location']['longitude']),
+        ('manufactor', 'PSA'),
+        ('brand', split_model[0]),
+        ('model', split_model[1]),
+        ('fuelType', d['value']['vehicle']['powerType']),
+        ('fuelLevel', d['value']['vehicle']['fillLevel'])
+    ])
+    return o
+
+
+def parse(dayiso=None):
+    if dayiso is None:
+        dayiso = datetime.date.today().isoformat()
+    rec = [car_to_row(d, m) for j in get_json(dayiso, 'multicity')
+           for d, m in get_cars(j)]
+    df = pd.DataFrame.from_records(rec)
+    save_to_csv(df, 'raw_rec', dayiso, 'multicity')

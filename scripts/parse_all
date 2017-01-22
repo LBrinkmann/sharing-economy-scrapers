@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import datetime
+import os
+import shutil
+import sc.drive_now.main
+import sc.multicity.main
+import sc.car2go.main
+from sc.io import get_data_path_alldays, get_data_path
+
+
+def main(exclude_today=True, rm_parsed=False):
+    archive_path = get_data_path('raw_archive')
+    for day in get_data_path_alldays('raw'):
+        if not (exclude_today and day == datetime.date.today().isoformat()):
+            try:
+                sc.drive_now.main.parse(day)
+                sc.multicity.main.parse(day)
+                sc.car2go.main.parse(day)
+            except:
+                pass
+            else:
+                try:
+                    archive_name = os.path.expanduser(
+                        os.path.join(archive_path, day))
+                    raw_path = get_data_path('raw', day)
+                    shutil.make_archive(archive_name, 'gztar', raw_path)
+                except:
+                    pass
+                else:
+                    if rm_parsed:
+                        shutil.rmtree(raw_path)
+
+
+if __name__ == '__main__':
+    main()
