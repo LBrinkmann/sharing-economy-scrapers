@@ -90,7 +90,7 @@ def get_batch(dayiso, startswith, batchsize):
     yield l
 
 
-def parse_batches(doc_to_cars, car_to_row, docname, dayiso, batchsize=500):
+def parse_batches(doc_to_cars, car_to_row, docname, dayiso, batchsize=100):
     for i, batch in enumerate(get_batch(dayiso, docname, batchsize)):
         rec = [car_to_row(d, m) for j in batch for d, m in doc_to_cars(j)]
         df = pd.DataFrame.from_records(rec)
